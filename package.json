@@ -10,7 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ajv": "^6.10.0"
+    "ajv": "^6.10.0",
+    "cheerio": "^1.0.0-rc.3"
   },
   "devDependencies": {
     "tape": "^4.10.2"
