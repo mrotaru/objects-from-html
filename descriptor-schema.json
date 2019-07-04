@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://mrotaru.co.uk/object-from-html.schema.json",
+  "title": "Object from HTML",
+  "description": "Specifies how to extract an object from HTML",
+  "type": "object",
+  "definitions": {
+    "stringPropertyDescriptor": {
+      "type": "string"
+    },
+    "objectPropertyDescriptor": {
+      "type": "object",
+      "properties": {
+        "selector": {
+          "type": "string"
+        },
+        "extract": {
+          "enum": ["href", "text"]
+        }
+      },
+      "required": ["selector"]
+    }
+  },
+  "propertyDescriptor": {
+    "oneOf": [
+      {
+        "$ref": "#/definitions/stringPropertyDescriptor"
+      },
+      {
+        "$ref": "#/definitions/objectPropertyDescriptor"
+      }
+    ]
+  },
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "container": {
+      "type": "string"
+    },
+    "properties": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "$ref": "#/definitions/propertyDescriptor"
+        }
+      }
+    }
+  },
+  "required": ["name", "properties"]
+}
