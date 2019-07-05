@@ -15,7 +15,7 @@
           "type": "string"
         },
         "extract": {
-          "enum": ["href", "text"]
+          "enum": ["href", "text", "html"]
         }
       },
       "required": ["selector"]
