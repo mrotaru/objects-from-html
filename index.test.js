@@ -131,6 +131,29 @@ test("extract: href", t => {
   t.end();
 });
 
+test.only("exclude", t => {
+  const html = `
+<li><a href="http://1.1.1">1.1.1</a></li>
+<li><a href="http://1.1.2">1.1.2</a></li>
+<li>
+  <ul id='inner'>
+    <li><a href="http://Foo">Foo</a></li>
+  </ul>
+</li>
+`;
+  const descriptors = [{
+    selector: "li a",
+    exclude: "ul a",
+    properties: { href: { extract: "href" } }
+  }];
+  const result = objectsFromHtml(html, descriptors);
+  t.deepEqual(result, [
+    { href: "http://1.1.1" },
+    { href: "http://1.1.2" },
+  ]);
+  t.end();
+});
+
 test("includes", t => {
   const html = `
 <ul id='1'>

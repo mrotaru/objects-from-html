@@ -30,7 +30,6 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
   }
 
   const result = process($("body"), topLevelItems, (depth = 0));
-  console.log(util.inspect(result, {depth: null}));
   return result
 
   function process(context, itemDescriptors, depth) {
@@ -94,11 +93,6 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                   $childElements = $childElements
                     .filter((i, $element) => $($element.parent).is($($parent)))
                 }
-                console.log(
-                  depth,
-                  `matching child selector ${included.selector}:`,
-                  $childElements.length
-                );
                 item.children = [
                   ...item.children,
                   ...process($childElements, [childItemDescriptor], depth + 1)
