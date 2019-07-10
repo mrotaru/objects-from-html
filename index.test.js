@@ -84,16 +84,18 @@ test("extract href", t => {
 });
 
 test("extract from current node", t => {
-  const html = "<div>AAA<em>BBB</em>CCC</p></div>"
+  const html = "<div>AAA<em>BBB</em>CCC</p></div>";
   const result = objectsFromHtml(html, {
-    selector: 'div',
+    selector: "div",
     properties: {
-      text: '.'
+      text: "."
     }
   });
-  t.deepEqual(result, [{
-    text: 'AAABBBCCC'
-  }])
+  t.deepEqual(result, [
+    {
+      text: "AAABBBCCC"
+    }
+  ]);
   t.end();
 });
 
@@ -119,25 +121,35 @@ test("extract html", t => {
   t.end();
 });
 
-test.only("includes", t => {
+test("extract: href", t => {
+  const html = '<li><a href="http://1.1.1">1.1.1</a>';
+  const descriptors = [
+    { selector: "a", properties: { href: { extract: "href" } } }
+  ];
+  const result = objectsFromHtml(html, descriptors);
+  t.deepEqual(result, [{ href: "http://1.1.1" }]);
+  t.end();
+});
+
+test("includes", t => {
   const html = `
 <ul id='1'>
     <h2>1</h2>
     <li>
         <h3>1.1</h3>
         <ul id='1.1'>
-            <li><p>1.1.1</p></li>
-            <li><p>1.1.2</p></li>
+            <li><a href="http://1.1.1">1.1.1</a></li>
+            <li><a href="http://1.1.2">1.1.2</a></li>
             <li>
               <ul id='inner'>
-                <li><p>Foo</p></li>
+                <li><a href="http://Foo">Foo</a></li>
               </ul>
             </li>
         </ul>
         <h3>1.2</h3>
         <ul id='1.2'>
-            <li><p>1.2.1</p></li>
-            <li><p>1.2.2</p></li>
+            <li><a href="http://1.2.1">1.2.1</a></li>
+            <li><a href="http://1.2.2">1.2.2</a></li>
         </ul>
     <li>
 </ul>
@@ -184,7 +196,7 @@ test.only("includes", t => {
   ];
   const result = objectsFromHtml(html, descriptors, {
     includeItemType: true,
-    topLevelItems: ['top-level'],
+    topLevelItems: ["top-level"]
   });
   t.deepEqual(result, [
     {
