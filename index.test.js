@@ -148,7 +148,7 @@ test("exclude", t => {
   t.end();
 });
 
-test.only("sameParent", t => {
+test("sameParent", t => {
   const html = `
   <div>
     <p id="1">p1</p>
@@ -193,6 +193,35 @@ test("sameLevel", t => {
   t.deepEqual(result, [
     { href: "http://1.1.1" },
     { href: "http://1.1.2" },
+  ]);
+  t.end();
+});
+
+test("sameLevel - can have different parents", t => {
+  const html = `
+  <div>
+    <p id="1">p1</p>
+    <p id="2">p2</p>
+    <div>
+      <p id="3">p3</p>
+    </div>
+    <p id="4">p4</p>
+  </div>
+  <div>
+    <p id="5">p5</p>
+  </div>
+`;
+  const descriptors = [{
+    selector: "p",
+    sameLevel: true,
+    properties: { text: '.' }
+  }];
+  const result = objectsFromHtml(html, descriptors);
+  t.deepEqual(result, [
+    { text: "p1" },
+    { text: "p2" },
+    { text: "p4" },
+    { text: "p5" },
   ]);
   t.end();
 });
