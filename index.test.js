@@ -148,13 +148,33 @@ test("exclude", t => {
   t.end();
 });
 
+test.only("sameParent", t => {
+  const html = `
+  <div>
+    <p id="1">p1</p>
+    <p id="2">p2</p>
+    <div>
+      <p id="3">p3</p>
+    </div>
+    <p id="4">p4</p>
+  </div>
+`;
+  const descriptors = [{
+    selector: "p",
+    sameParent: true,
+    properties: { text: '.' }
+  }];
+  const result = objectsFromHtml(html, descriptors);
+  t.deepEqual(result, [
+    { text: "p1" },
+    { text: "p2" },
+    { text: "p4" },
+  ]);
+  t.end();
+});
 
-test.only("sameLevel", t => {
-  // Fails because only siblings of the first match are selected;
-  // in this case, siblings of the first `a` - but there are none.
-  // So the result is just one item. The idea really is to select
-  // only items on the same level - i.e, same distance from the
-  // root.
+
+test("sameLevel", t => {
   const html = `
 <li><a href="http://1.1.1">1.1.1</a></li>
 <li><a href="http://1.1.2">1.1.2</a></li>

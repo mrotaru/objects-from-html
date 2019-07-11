@@ -36,11 +36,20 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     const items = [];
     context.each((i, ctx) => {
       itemDescriptors.forEach(itemDescriptor => {
-        const { selector, name } = itemDescriptor;
+        const { selector, sameLevel, sameParent, name } = itemDescriptor;
         const $all = $(selector, ctx);
         const $parent = $($all.first()).parent();
+        const distanceFromContext = $($all.first()).parentsUntil(ctx).length;
         $all
-          .filter((i, $element) => $($element.parent).is($($parent)))
+          .filter((i, $element) => {
+            if (sameParent) {
+              return $($element.parent).is($($parent))
+            } else if (sameLevel) {
+              return $($element).parentsUntil(ctx).length === distanceFromContext
+            } else {
+              return true
+            }
+          })
           .each((i, $element) => {
             let item = {};
             if (finalOptions.includeItemType) {
