@@ -226,6 +226,67 @@ test("sameLevel - can have different parents", t => {
   t.end();
 });
 
+test("leafsOnly - simple", t => {
+  const html = `
+  <p>
+    <p id="1">p1</p>
+    <p>
+      <p id="2">p2</p>
+    </p>
+  </p>
+`;
+  const descriptors = [{
+    selector: "p",
+    leafsOnly: true,
+    properties: { text: '.' }
+  }];
+  const result = objectsFromHtml(html, descriptors);
+  t.deepEqual(result, [
+    { text: "p1" },
+    { text: "p2" },
+  ]);
+  t.end();
+})
+
+test.skip("leafsOnly", t => {
+  const html = `
+  <p>
+    <p id="1">p1</p>
+    <p id="2">p2</p>
+    <p>
+      <p id="3">p3</p>
+    </p>
+    <p id="4">p4</p>
+    <p>
+      <p>
+        <p id="5">p5</p>
+      </p>
+      <p>
+        <p id="6">p6</p>
+      </p>
+    </p>
+    <p id="7">p7</p>
+  </p>
+`;
+  const descriptors = [{
+    selector: "p",
+    leafsOnly: true,
+    properties: { text: '.' }
+  }];
+  const result = objectsFromHtml(html, descriptors);
+  t.deepEqual(result, [
+    { text: "p1" },
+    { text: "p2" },
+    { text: "p3" },
+    { text: "p4" },
+    { text: "p5" },
+    { text: "p6" },
+    { text: "p7" },
+  ]);
+  t.end();
+
+})
+
 test("includes", t => {
   const html = `
 <ul id='1'>
