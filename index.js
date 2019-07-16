@@ -85,7 +85,11 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             item.itemType = name;
           }
           // properties
-          for (let propertyKey of Object.keys(itemDescriptor.properties)) {
+          const propertyKeys =
+            (itemDescriptor.properties &&
+              Object.keys(itemDescriptor.properties)) ||
+            [];
+          for (let propertyKey of propertyKeys) {
             const propertyDescriptor = itemDescriptor.properties[propertyKey];
             if (typeof propertyDescriptor === 'string') {
               // just a CSS selector
@@ -121,7 +125,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             for (let included of itemDescriptor.includes) {
               let childItemDescriptor;
               let isReference = false;
-              if (typeof included === 'string') {
+              if (included.name) {
                 isReference = true;
                 childItemDescriptor = itemDescriptorsArray.find(
                   itemDescriptor => itemDescriptor.name === included.name,
@@ -134,11 +138,17 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
 
               let childElements;
               if (isReference) {
-                childElements = included.selector
-                  ? $($element)
+                if (included.selector) {
+                  if (included.selector === '.') {
+                    childElements = [$element];
+                  } else {
+                    childElements = $($element)
                       .find(included.selector)
-                      .toArray()
-                  : $element;
+                      .toArray();
+                  }
+                } else {
+                  childElements = [$element];
+                }
               } else {
                 childElements = [$element];
               }
