@@ -17,7 +17,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     : [itemDescriptors];
 
   const $ = cheerio.load(html, {
-    normalizeWhitespace: false,
+    normalizeWhitespace: true,
     xmlMode: false,
     decodeEntities: true,
   });
@@ -32,44 +32,42 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
   const result = process($('body'), topLevelItems, (depth = 0));
   return result;
 
+  function dbg($el, txt = '') {
+    console.log(txt, $el.name, $el.attribs);
+  }
+
   function process(context, itemDescriptors, depth) {
     const items = [];
-    context.each((i, ctx) => {
+    const contextElements = Array.isArray(context)
+      ? context
+      : context.toArray();
+    contextElements.forEach(ctx => {
       itemDescriptors.forEach(itemDescriptor => {
         const {
           selector,
           sameLevel,
           sameParent,
-          leafsOnly,
+          leavesOnly,
           name,
         } = itemDescriptor;
-        const $all = $(selector, ctx);
-        const $parent = $($all.first()).parent();
-        const distanceFromContext = $($all.first()).parentsUntil(ctx).length;
-        let $matches;
-        if (leafsOnly) {
-          // very inefficient (?!)
-          const $excluded = [];
-          $all.each((i, $match) => {
-            console.log('match', $match.name, $match.attribs)
-            // const $parents = $($match).parentsUntil(ctx);
-            const $parents = $($match).parents();
-            console.log($parents)
-            const $f = $($parents).filter((i, $parent) => {
-              console.log('here')
-            //   // console.log('here', $($parent).html())
-            //   return $($parent).is($all);
+        const all = $(selector, ctx).toArray();
+        const $parent = $(all[0]).parent();
+        const distanceFromContext = $(all[0]).parentsUntil(ctx).length;
+        let matches;
+        if (leavesOnly) {
+          matches = [...all];
+          all.forEach($match => {
+            const parents = $($match)
+              .parents()
+              .toArray();
+            parents.forEach($parent => {
+              if (all.find($el => $el === $parent)) {
+                matches = matches.filter($leaf => $leaf !== $parent);
+              }
             });
-            // console.log('f', $f.length)
-            if ($f.length) {
-              $excluded.push($match);
-            }
           });
-          $matches = $all.filter(
-            (i, $match) => !$excluded.find($el => $el.is($match)),
-          );
         } else {
-          $matches = $all.filter((i, $element) => {
+          matches = all.filter($element => {
             if (sameParent) {
               return $($element.parent).is($($parent));
             } else if (sameLevel) {
@@ -81,7 +79,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             }
           });
         }
-        $matches.each((i, $element) => {
+        matches.forEach($element => {
           let item = {};
           if (finalOptions.includeItemType) {
             item.itemType = name;
@@ -121,23 +119,46 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
               item.children = [];
             }
             for (let included of itemDescriptor.includes) {
-              const childItemDescriptor = itemDescriptorsArray.find(
-                itemDescriptor => itemDescriptor.name === included.name,
-              );
-              assert(childItemDescriptor);
-              let $childElements = included.selector
-                ? $($element).find(included.selector)
-                : $element;
-              if (included.selector) {
-                const $parent = $($childElements.first()).parent();
-                $childElements = $childElements.filter((i, $element) =>
-                  $($element.parent).is($($parent)),
+              let childItemDescriptor;
+              let isReference = false;
+              if (typeof included === 'string') {
+                isReference = true;
+                childItemDescriptor = itemDescriptorsArray.find(
+                  itemDescriptor => itemDescriptor.name === included.name,
                 );
+              } else {
+                assert(typeof included === 'object');
+                childItemDescriptor = included;
               }
-              item.children = [
-                ...item.children,
-                ...process($childElements, [childItemDescriptor], depth + 1),
-              ];
+              assert(childItemDescriptor);
+
+              let childElements;
+              if (isReference) {
+                childElements = included.selector
+                  ? $($element)
+                      .find(included.selector)
+                      .toArray()
+                  : $element;
+              } else {
+                childElements = [$element];
+              }
+
+              if (included.selector) {
+                assert(childElements[0]);
+                const $firstChildParent = childElements[0].parent;
+                childElements = childElements.filter($element => {
+                  const $elementParent = $element.parent;
+                  return $elementParent === $firstChildParent;
+                });
+              }
+
+              const children = process(
+                childElements,
+                [childItemDescriptor],
+                depth + 1,
+              );
+
+              item.children = [...item.children, ...children];
             }
           }
           items.push(item);

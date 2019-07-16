@@ -1,6 +1,12 @@
 const test = require("tape");
 const cheerio = require("cheerio");
 
+const htmlParserOptions = {
+  normalizeWhitespace: true,
+  xmlMode: false,
+  decodeEntities: true,
+}
+
 test("select only siblings", t => {
   const html = `
 <ul id='1'>
@@ -25,11 +31,7 @@ test("select only siblings", t => {
 </ul>
 `;
 
-  $ = cheerio.load(html, {
-    normalizeWhitespace: false,
-    xmlMode: false,
-    decodeEntities: true
-  });
+  $ = cheerio.load(html, htmlParserOptions)
 
   function fn (ctx, selector, depth = 0) {
     const $all = $(selector, ctx)
@@ -47,25 +49,21 @@ test("select only siblings", t => {
 });
 
 
-test.only("select leaves", t => {
+test("select leaves", t => {
   const html = `
-  <div>
-    <p id="inner-1">
+  <section>
+    <div id="inner-1">
       <p id="1">p1</p>
-    </p>
-  </div>
-  <p id="root">
+    </div>
+  </section>
+  <div id="root">
     <p id="2">p2</p>
-    <p id="inner-2">
+    <div id="inner-2">
       <p id="3">p3</p>
-    </p>
-  </p>
+    </div>
+  </div>
 `;
-  $ = cheerio.load(html, {
-    normalizeWhitespace: true,
-    xmlMode: true,
-    decodeEntities: true
-  });
+  $ = cheerio.load(html, htmlParserOptions)
 
   const all = $('p').toArray()
   let leaves = [...all]
