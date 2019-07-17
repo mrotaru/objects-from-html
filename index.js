@@ -22,6 +22,27 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     decodeEntities: true,
   });
 
+  const dbgDesc = $el => {
+    let attribs = '';
+    if ($el.attribs.class) attribs = `.${$el.attribs.class}`;
+    if ($el.attribs.id) attribs = `#${$el.attribs.id}`;
+    return attribs ? `${$el.name} (${attribs})` : $el.name;
+  };
+
+  function dbg(_info = '', $_el) {
+    const $el = typeof _info !== 'string' ? _info : $_el;
+    const info = typeof _info !== 'string' ? $_el : _info;
+    let retVal = $($el)
+      .parents()
+      .toArray()
+      .reduce((acc, $curr, i) => {
+        const desc = dbgDesc($curr);
+        return i === 0 ? `${desc}` : `${desc} > ${acc}`;
+      }, dbgDesc($el));
+    retVal = (info && `${info}: ${retVal}`) || retVal;
+    console.log(retVal);
+  }
+
   let topLevelItems = itemDescriptorsArray;
   if (finalOptions.topLevelItems) {
     topLevelItems = finalOptions.topLevelItems.map(topLevelItemName =>
@@ -31,10 +52,6 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
 
   const result = process($('body'), topLevelItems, (depth = 0));
   return result;
-
-  function dbg($el, txt = '') {
-    console.log(txt, $el.name, $el.attribs);
-  }
 
   function process(context, itemDescriptors, depth) {
     const items = [];
@@ -50,7 +67,11 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           leavesOnly,
           name,
         } = itemDescriptor;
-        const all = $(selector, ctx).toArray();
+        dbg(`${depth} looking for ${selector} in`, ctx)
+        let all = [ctx];
+        if (selector && selector !== '.') {
+          all = $(selector, ctx).toArray();
+        }
         const $parent = $(all[0]).parent();
         const distanceFromContext = $(all[0]).parentsUntil(ctx).length;
         let matches;
@@ -80,6 +101,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           });
         }
         matches.forEach($element => {
+          dbg('  found', $element)
           let item = {};
           if (finalOptions.includeItemType) {
             item.itemType = name;
@@ -136,34 +158,36 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
               }
               assert(childItemDescriptor);
 
-              let childElements;
+              let includedContainers;
               if (isReference) {
                 if (included.selector) {
                   if (included.selector === '.') {
-                    childElements = [$element];
+                    includedContainers = [$element];
                   } else {
-                    childElements = $($element)
+                    includedContainers = $($element)
                       .find(included.selector)
                       .toArray();
                   }
                 } else {
-                  childElements = [$element];
+                  includedContainers = [$element];
                 }
               } else {
-                childElements = [$element];
+                includedContainers = [$element];
               }
 
+              // ensure all elements to be searched for included items
+              // have the same parent (the parent of the first such element)
               if (included.selector) {
-                assert(childElements[0]);
-                const $firstChildParent = childElements[0].parent;
-                childElements = childElements.filter($element => {
+                assert(includedContainers[0]);
+                const $firstChildParent = includedContainers[0].parent;
+                includedContainers = includedContainers.filter($element => {
                   const $elementParent = $element.parent;
                   return $elementParent === $firstChildParent;
                 });
               }
 
               const children = process(
-                childElements,
+                includedContainers,
                 [childItemDescriptor],
                 depth + 1,
               );

@@ -325,7 +325,7 @@ test('includes - simple', t => {
   t.end();
 });
 
-test.only('includes - simple - with references', t => {
+test('includes - simple - with references', t => {
   const html = `
   <div class='foo'>
     <h2>Foo</h2>
@@ -376,7 +376,7 @@ test.only('includes - simple - with references', t => {
   t.end();
 });
 
-test('includes', t => {
+test.only('includes', t => {
   const html = `
 <ul id='1'>
     <li>
@@ -413,6 +413,7 @@ test('includes', t => {
     {
       name: 'link-list',
       selector: 'ul',
+      sameLevel: true,
       includes: [
         {
           name: 'link',
