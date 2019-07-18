@@ -29,18 +29,15 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     return attribs ? `${$el.name} (${attribs})` : $el.name;
   };
 
-  function dbg(_info = '', $_el) {
+  function dbg(_info = '', $_el, depth = 0) {
     const $el = typeof _info !== 'string' ? _info : $_el;
     const info = typeof _info !== 'string' ? $_el : _info;
     let retVal = $($el)
       .parents()
       .toArray()
-      .reduce((acc, $curr, i) => {
-        const desc = dbgDesc($curr);
-        return i === 0 ? `${desc}` : `${desc} > ${acc}`;
-      }, dbgDesc($el));
+      .reduce((acc, $curr) => `${dbgDesc($curr)} > ${acc}`, dbgDesc($el));
     retVal = (info && `${info}: ${retVal}`) || retVal;
-    console.log(retVal);
+    console.log(' '.repeat(depth * 4), retVal);
   }
 
   let topLevelItems = itemDescriptorsArray;
@@ -67,7 +64,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           leavesOnly,
           name,
         } = itemDescriptor;
-        dbg(`${depth} looking for ${selector} in`, ctx)
+        dbg(`🔍 ${selector} in`, ctx, depth)
         let all = [ctx];
         if (selector && selector !== '.') {
           all = $(selector, ctx).toArray();
@@ -101,7 +98,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           });
         }
         matches.forEach($element => {
-          dbg('  found', $element)
+          dbg('    🌟', $element, depth)
           let item = {};
           if (finalOptions.includeItemType) {
             item.itemType = name;
@@ -195,6 +192,8 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
               item.children = [...item.children, ...children];
             }
           }
+
+          console.log(' '.repeat(depth * 4), '    🎁', {itemType: item.itemType, text: item.text, children: item.children && item.children.length || null })
           items.push(item);
         });
       });
