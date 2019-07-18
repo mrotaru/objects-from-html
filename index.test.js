@@ -425,7 +425,6 @@ test('includes', t => {
   const html = `
 <ul id='1'>
     <li>
-        <h3>1.1</h3>
         <ul id='1.1'>
             <li><a href="http://1.1.1">1.1.1</a></li>
             <li><a href="http://1.1.2">1.1.2</a></li>
@@ -435,7 +434,6 @@ test('includes', t => {
               </ul>
             </li>
         </ul>
-        <h3>1.2</h3>
         <ul id='1.2'>
             <li><a href="http://1.2.1">1.2.1</a></li>
             <li><a href="http://1.2.2">1.2.2</a></li>
@@ -447,7 +445,8 @@ test('includes', t => {
   const descriptors = [
     {
       name: 'top-level',
-      selector: 'ul',
+      selector: 'li',
+      sameLevel: true,
       includes: [
         {
           name: 'link-list',
@@ -465,13 +464,10 @@ test('includes', t => {
           selector: 'li',
         },
       ],
-      properties: {
-        heading: 'h3',
-      },
     },
     {
       name: 'link',
-      selector: 'a',
+      selector: '> a',
       properties: {
         href: {
           selector: '.',
@@ -491,7 +487,6 @@ test('includes', t => {
       children: [
         {
           itemType: 'link-list',
-          heading: '1.1',
           children: [
             {
               itemType: 'link',
@@ -507,7 +502,6 @@ test('includes', t => {
         },
         {
           itemType: 'link-list',
-          heading: '1.1', // first match will be selected; TODO: sections
           children: [
             {
               itemType: 'link',

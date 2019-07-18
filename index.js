@@ -164,6 +164,29 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                     includedContainers = $($element)
                       .find(included.selector)
                       .toArray();
+                    const $firstIncludedContainerParent = $(
+                      includedContainers[0],
+                    ).parent();
+                    const distanceFromCurrentElement = $(
+                      includedContainers[0],
+                    ).parentsUntil($element).length;
+                    includedContainers = includedContainers.filter(
+                      $includedContainer => {
+                        if (childItemDescriptor.sameParent) {
+                          return $($includedContainer.parent).is(
+                            $($firstIncludedContainerParent),
+                          );
+                        } else if (sameLevel) {
+                          return (
+                            $($includedContainer).parentsUntil(
+                              $firstIncludedContainerParent,
+                            ).length === distanceFromCurrentElement
+                          );
+                        } else {
+                          return true;
+                        }
+                      },
+                    );
                   }
                 } else {
                   includedContainers = [$element];
@@ -174,20 +197,25 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
 
               // ensure all elements to be searched for included items
               // have the same parent (the parent of the first such element)
-              if (included.selector) {
-                assert(includedContainers[0]);
-                const $firstChildParent = includedContainers[0].parent;
+              const firstIncludedContainer = includedContainers[0];
+              if (included.selector && firstIncludedContainer) {
+                const $firstChildParent = firstIncludedContainer.parent;
                 includedContainers = includedContainers.filter($element => {
                   const $elementParent = $element.parent;
                   return $elementParent === $firstChildParent;
                 });
+              } else {
+                dbg(`containers not found (${included.selector})`, $element)
               }
 
-              const children = process(
-                includedContainers,
-                [childItemDescriptor],
-                depth + 1,
-              );
+              let children = [];
+              if (firstIncludedContainer) {
+                children = process(
+                  includedContainers,
+                  [childItemDescriptor],
+                  depth + 1,
+                );
+              }
 
               item.children = [...item.children, ...children];
             }
