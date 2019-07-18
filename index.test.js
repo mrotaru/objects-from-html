@@ -1,4 +1,5 @@
 const test = require('tape');
+const jsonDiff = require('json-diff');
 
 const objectsFromHtml = require('.');
 
@@ -445,11 +446,12 @@ test('includes', t => {
   const descriptors = [
     {
       name: 'top-level',
-      selector: 'li',
+      selector: 'ul',
       sameLevel: true,
       includes: [
         {
           name: 'link-list',
+          sameLevel: true,
           selector: 'li',
         },
       ],
@@ -481,7 +483,8 @@ test('includes', t => {
     includeItemType: true,
     topLevelItemTypes: ['top-level'],
   });
-  t.deepEqual(result, [
+
+  const expected = [
     {
       itemType: 'top-level',
       children: [
@@ -490,12 +493,12 @@ test('includes', t => {
           children: [
             {
               itemType: 'link',
-              href: '//1.1.1',
+              href: 'http://1.1.1',
               text: '1.1.1',
             },
             {
               itemType: 'link',
-              href: '//1.1.2',
+              href: 'http://1.1.2',
               text: '1.1.2',
             },
           ],
@@ -505,19 +508,21 @@ test('includes', t => {
           children: [
             {
               itemType: 'link',
-              href: '//1.2.1',
+              href: 'http://1.2.1',
               text: '1.2.1',
             },
             {
               itemType: 'link',
-              href: '//1.2.2',
+              href: 'http://1.2.2',
               text: '1.2.2',
             },
           ],
         },
       ],
     },
-  ]);
+  ];
+
+  t.deepEqual(result, expected);
 
   t.end();
 });
