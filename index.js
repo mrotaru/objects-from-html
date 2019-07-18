@@ -6,7 +6,7 @@ const util = require('util');
 const defaultOptions = {
   generateId: false,
   includeItemType: false,
-  topLevelItems: null,
+  topLevelItemTypes: null,
 };
 
 function objectsFromHtml(html, itemDescriptors, options = {}) {
@@ -40,14 +40,14 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     console.log(' '.repeat(depth * 4), retVal);
   }
 
-  let topLevelItems = itemDescriptorsArray;
-  if (finalOptions.topLevelItems) {
-    topLevelItems = finalOptions.topLevelItems.map(topLevelItemName =>
+  let topLevelItemTypes = itemDescriptorsArray;
+  if (finalOptions.topLevelItemTypes) {
+    topLevelItemTypes = finalOptions.topLevelItemTypes.map(topLevelItemName =>
       itemDescriptorsArray.find(desc => desc.name === topLevelItemName),
     );
   }
 
-  const result = process($('body'), topLevelItems, (depth = 0));
+  const result = process($('body'), topLevelItemTypes, (depth = 0));
   return result;
 
   function process(context, itemDescriptors, depth) {
@@ -64,7 +64,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           leavesOnly,
           name,
         } = itemDescriptor;
-        dbg(`🔍 ${selector} in`, ctx, depth)
+        dbg(`🔍 ${selector} in`, ctx, depth);
         let all = [ctx];
         if (selector && selector !== '.') {
           all = $(selector, ctx).toArray();
@@ -98,7 +98,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           });
         }
         matches.forEach($element => {
-          dbg('    🌟', $element, depth)
+          dbg('    🌟', $element, depth);
           let item = {};
           if (finalOptions.includeItemType) {
             item.itemType = name;
@@ -193,7 +193,11 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             }
           }
 
-          console.log(' '.repeat(depth * 4), '    🎁', {itemType: item.itemType, text: item.text, children: item.children && item.children.length || null })
+          console.log(' '.repeat(depth * 4), '    🎁', {
+            itemType: item.itemType,
+            text: item.text,
+            children: (item.children && item.children.length) || null,
+          });
           items.push(item);
         });
       });

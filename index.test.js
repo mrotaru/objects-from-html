@@ -325,6 +325,50 @@ test('includes - simple', t => {
   t.end();
 });
 
+test('includes - sameLevel', t => {
+  const html = `
+  <div class='foo'>
+    <div class='bar'>
+      <p>bar 1</p>
+      <div class='bar'>
+        <p>bar 2</p>
+      </div>
+    </div> 
+  </div>
+`;
+  const descriptors = [
+    {
+      name: 'top-level',
+      selector: '.foo',
+      includes: [
+        {
+          name: 'p-item',
+          selector: '.',
+        },
+      ],
+    }, {
+      name: 'p-item',
+      selector: 'p',
+      sameLevel: true,
+      properties: {
+        text: '.',
+      },
+    }
+  ];
+
+  const result = objectsFromHtml(html, descriptors, { topLevelItemTypes: ['top-level'] });
+  t.deepEqual(result, [
+    {
+      children: [
+        {
+          text: 'bar 1',
+        },
+      ],
+    },
+  ]);
+  t.end();
+});
+
 test('includes - simple - with references', t => {
   const html = `
   <div class='foo'>
@@ -347,18 +391,19 @@ test('includes - simple - with references', t => {
           selector: '.',
         },
       ],
-    }, {
+    },
+    {
       name: 'bar',
       selector: '.bar',
       properties: {
         heading: 'h3',
       },
-    }
+    },
   ];
 
   const result = objectsFromHtml(html, descriptors, {
     includeItemType: true,
-    topLevelItems: ['foo'],
+    topLevelItemTypes: ['foo'],
   });
 
   t.deepEqual(result, [
@@ -376,7 +421,7 @@ test('includes - simple - with references', t => {
   t.end();
 });
 
-test.only('includes', t => {
+test('includes', t => {
   const html = `
 <ul id='1'>
     <li>
@@ -438,7 +483,7 @@ test.only('includes', t => {
   ];
   const result = objectsFromHtml(html, descriptors, {
     includeItemType: true,
-    topLevelItems: ['top-level'],
+    topLevelItemTypes: ['top-level'],
   });
   t.deepEqual(result, [
     {
