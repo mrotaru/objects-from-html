@@ -526,3 +526,55 @@ test('includes', t => {
 
   t.end();
 });
+
+test('markers', t => {
+  const html = `
+  <div>
+    <h2>Foo</h2>
+    <div>
+      <p>foo text</p>
+    </div>
+    <h2>Bar</h2>
+    <div>
+      <p>bar text</p>
+    </div>
+  </div>
+`;
+  const descriptors = [
+    {
+      selector: 'div',
+      sameLevel: true,
+      includes: [
+        {
+          name: 'section',
+          startMarker: 'h2',
+        },
+      ],
+    },
+    {
+      name: 'section',
+      properties: {
+        heading: 'h2',
+        text: 'div'
+      },
+    },
+  ];
+
+  const result = objectsFromHtml(html, descriptors);
+
+  t.deepEqual(result, [
+    {
+      children: [
+        {
+          heading: 'Foo',
+          text: 'Foo text',
+        },
+        {
+          heading: 'Bar',
+          text: 'Bar text',
+        },
+      ],
+    },
+  ]);
+  t.end();
+});
