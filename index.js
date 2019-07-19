@@ -69,6 +69,9 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
         if (selector && selector !== '.') {
           all = $(selector, ctx).toArray();
         }
+
+        // Build an array of elements matching the item descriptor. Take into
+        // account the `leavesOnly`, `sameParent` and `sameLevel` options.
         const $parent = $(all[0]).parent();
         const distanceFromContext = $(all[0]).parentsUntil(ctx).length;
         let matches;
@@ -97,13 +100,18 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             }
           });
         }
+
+        // For every matching element, extract properties and look for included
+        // (nested) items.
         matches.forEach($element => {
           dbg('    🌟', $element, depth);
           let item = {};
           if (finalOptions.includeItemType) {
             item.itemType = name;
           }
-          // properties
+
+          // Extract properties, as described by the item descriptors `properties`
+          // property for the current item type.
           const propertyKeys =
             (itemDescriptor.properties &&
               Object.keys(itemDescriptor.properties)) ||
@@ -136,7 +144,13 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             }
           }
 
-          // children
+          // Based on the objects inside the `includes` property, search for
+          // included items, which will form the `children` property of the
+          // current item. These objects can be item descriptors, or
+          // "references" to item descriptors. A "reference" has to include the
+          // item name, and can also have a `selector`, which can restrict where
+          // to look for items of the referenced types. If the object is an item
+          // descriptor, it will be looked for inside the whole current element.
           if (itemDescriptor.includes && itemDescriptor.includes.length > 0) {
             if (!item.children) {
               item.children = [];
@@ -155,6 +169,11 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
               }
               assert(childItemDescriptor);
 
+              // If the reference object has a selector, find all matching
+              // elements, also taking into account `sameLevel` and
+              // `sameParent`, if specified. If there is no `selector`, the
+              // array of elements to be searched for included items will only
+              // contain the current element.
               let includedContainers;
               if (isReference) {
                 if (included.selector) {
@@ -195,7 +214,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                 includedContainers = [$element];
               }
 
-              // ensure all elements to be searched for included items
+              // Ensure all elements to be searched for included items
               // have the same parent (the parent of the first such element)
               const firstIncludedContainer = includedContainers[0];
               if (included.selector && firstIncludedContainer) {
@@ -205,9 +224,11 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                   return $elementParent === $firstChildParent;
                 });
               } else {
-                dbg(`containers not found (${included.selector})`, $element)
+                dbg(`containers not found (${included.selector})`, $element, depth)
               }
 
+              // Search each element (that wasn't filtered out above) for
+              // included items by recursion, by using recursion.
               let children = [];
               if (firstIncludedContainer) {
                 children = process(
