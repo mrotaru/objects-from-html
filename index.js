@@ -3,13 +3,15 @@ const assert = require('assert');
 const deepMerge = require('lodash.merge');
 const util = require('util');
 
-const DEBUG = false
-
 const defaultOptions = {
   generateId: false,
   includeItemType: false,
   topLevelItemTypes: null,
+  debug: false,
+  root: 'body',
 };
+
+const sanitizeString = str => str.trim().replace(/\s+/gm, ' ')
 
 function objectsFromHtml(html, itemDescriptors, options = {}) {
   const finalOptions = deepMerge(defaultOptions, options);
@@ -39,7 +41,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
       .toArray()
       .reduce((acc, $curr) => `${dbgDesc($curr)} > ${acc}`, dbgDesc($el));
     retVal = (info && `${info}: ${retVal}`) || retVal;
-    DEBUG && console.log(' '.repeat(depth * 4), retVal);
+    finalOptions.debug && console.log(' '.repeat(depth * 4), retVal);
   }
 
   let topLevelItemTypes = itemDescriptorsArray;
@@ -49,7 +51,8 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     );
   }
 
-  const result = process($('body'), topLevelItemTypes, (depth = 0));
+  const $root = finalOptions.root && $(finalOptions.root) || $()
+  const result = process($root, topLevelItemTypes, (depth = 0));
   return result;
 
   function process(context, itemDescriptors, depth) {
@@ -126,7 +129,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                 propertyDescriptor === '.'
                   ? $($element, ctx)
                   : $($element, ctx).find(propertyDescriptor);
-              item[propertyKey] = $propertyElement.text();
+              item[propertyKey] = sanitizeString($propertyElement.text())
             } else if (typeof propertyDescriptor === 'object') {
               // CSS selector and an 'extract' property
               assert(propertyDescriptor.extract, 'must have extract');
@@ -137,7 +140,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                   ? $($element, ctx)
                   : $($element, ctx).find(selector);
               if (extract === 'text') {
-                item[propertyKey] = $propertyElement.text();
+                item[propertyKey] = sanitizeString($propertyElement.text())
               } else if (extract === 'href') {
                 item[propertyKey] = $propertyElement.attr('href');
               } else if (extract === 'html') {
@@ -244,7 +247,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             }
           }
 
-          DEBUG && console.log(' '.repeat(depth * 4), '    🎁', {
+          finalOptions.debug && console.log(' '.repeat(depth * 4), '    🎁', {
             itemType: item.itemType,
             text: item.text,
             children: (item.children && item.children.length) || null,
