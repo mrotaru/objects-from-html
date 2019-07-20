@@ -3,6 +3,8 @@ const assert = require('assert');
 const deepMerge = require('lodash.merge');
 const util = require('util');
 
+const DEBUG = false
+
 const defaultOptions = {
   generateId: false,
   includeItemType: false,
@@ -37,7 +39,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
       .toArray()
       .reduce((acc, $curr) => `${dbgDesc($curr)} > ${acc}`, dbgDesc($el));
     retVal = (info && `${info}: ${retVal}`) || retVal;
-    console.log(' '.repeat(depth * 4), retVal);
+    DEBUG && console.log(' '.repeat(depth * 4), retVal);
   }
 
   let topLevelItemTypes = itemDescriptorsArray;
@@ -242,7 +244,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             }
           }
 
-          console.log(' '.repeat(depth * 4), '    🎁', {
+          DEBUG && console.log(' '.repeat(depth * 4), '    🎁', {
             itemType: item.itemType,
             text: item.text,
             children: (item.children && item.children.length) || null,
