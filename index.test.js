@@ -528,7 +528,7 @@ test('includes', t => {
 });
 
 // markers are not implemented yet
-test.skip('markers', t => {
+test.only('markers', t => {
   const html = `
   <div>
     <h2>Foo</h2>

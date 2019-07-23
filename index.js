@@ -7,11 +7,11 @@ const defaultOptions = {
   generateId: false,
   includeItemType: false,
   topLevelItemTypes: null,
-  debug: false,
+  debug: true,
   root: 'body',
 };
 
-const sanitizeString = str => str.trim().replace(/\s+/gm, ' ')
+const sanitizeString = str => str.trim().replace(/\s+/gm, ' ');
 
 function objectsFromHtml(html, itemDescriptors, options = {}) {
   const finalOptions = deepMerge(defaultOptions, options);
@@ -51,7 +51,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     );
   }
 
-  const $root = finalOptions.root && $(finalOptions.root) || $()
+  const $root = (finalOptions.root && $(finalOptions.root)) || $();
   const result = process($root, topLevelItemTypes, (depth = 0));
   return result;
 
@@ -129,7 +129,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                 propertyDescriptor === '.'
                   ? $($element, ctx)
                   : $($element, ctx).find(propertyDescriptor);
-              item[propertyKey] = sanitizeString($propertyElement.text())
+              item[propertyKey] = sanitizeString($propertyElement.text());
             } else if (typeof propertyDescriptor === 'object') {
               // CSS selector and an 'extract' property
               assert(propertyDescriptor.extract, 'must have extract');
@@ -140,7 +140,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                   ? $($element, ctx)
                   : $($element, ctx).find(selector);
               if (extract === 'text') {
-                item[propertyKey] = sanitizeString($propertyElement.text())
+                item[propertyKey] = sanitizeString($propertyElement.text());
               } else if (extract === 'href') {
                 item[propertyKey] = $propertyElement.attr('href');
               } else if (extract === 'html') {
@@ -173,6 +173,43 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                 childItemDescriptor = included;
               }
               assert(childItemDescriptor);
+
+              if (included.startMarker) {
+                const { startMarker } = included;
+                childElements = $($element)
+                  .children()
+                  .toArray();
+                let $fragment = $('<div id="scraping-fragment"></div>');
+                let emptyFragment = true;
+                let inside = false;
+                let i = 0;
+                while (i <= childElements.length) {
+                  let $curr = childElements[i];
+                  if ($($curr).find(startMarker)) {
+                    inside = true;
+                    if (!emptyFragment || i === childElements.length - 1) {
+                      console.log('html', $($fragment).html());
+                      const includedItems = process(
+                        $fragment,
+                        [childItemDescriptor],
+                        depth + 1,
+                      );
+                      console.log('incl items', includedItems);
+                      item.children = [...item.children, ...includedItems];
+                    } else {
+                      $fragment = $('<div id="scraping-fragment"></div>');
+                      emptyFragment = true;
+                    }
+                  } else {
+                    if (inside) {
+                      $fragment.append($curr);
+                      emptyFragment = false;
+                    }
+                  }
+                  i++;
+                }
+                return;
+              }
 
               // If the reference object has a selector, find all matching
               // elements, also taking into account `sameLevel` and
@@ -229,7 +266,11 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                   return $elementParent === $firstChildParent;
                 });
               } else {
-                dbg(`containers not found (${included.selector})`, $element, depth)
+                dbg(
+                  `containers not found (${included.selector})`,
+                  $element,
+                  depth,
+                );
               }
 
               // Search each element (that wasn't filtered out above) for
@@ -247,11 +288,12 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             }
           }
 
-          finalOptions.debug && console.log(' '.repeat(depth * 4), '    🎁', {
-            itemType: item.itemType,
-            text: item.text,
-            children: (item.children && item.children.length) || null,
-          });
+          finalOptions.debug &&
+            console.log(' '.repeat(depth * 4), '    🎁', {
+              itemType: item.itemType,
+              text: item.text,
+              children: (item.children && item.children.length) || null,
+            });
           items.push(item);
         });
       });
