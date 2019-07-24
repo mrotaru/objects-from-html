@@ -347,17 +347,20 @@ test('includes - sameLevel', t => {
           selector: '.',
         },
       ],
-    }, {
+    },
+    {
       name: 'p-item',
       selector: 'p',
       sameLevel: true,
       properties: {
         text: '.',
       },
-    }
+    },
   ];
 
-  const result = objectsFromHtml(html, descriptors, { topLevelItemTypes: ['top-level'] });
+  const result = objectsFromHtml(html, descriptors, {
+    topLevelItemTypes: ['top-level'],
+  });
   t.deepEqual(result, [
     {
       children: [
@@ -530,14 +533,14 @@ test('includes', t => {
 // markers are not implemented yet
 test.only('markers', t => {
   const html = `
-  <div>
+  <div id="container">
     <h2>Foo</h2>
-    <div>
-      <p>foo text</p>
+    <div id="foo">
+      <p>Foo text</p>
     </div>
     <h2>Bar</h2>
-    <div>
-      <p>bar text</p>
+    <div id="bar">
+      <p>Bar text</p>
     </div>
   </div>
 `;
@@ -545,6 +548,7 @@ test.only('markers', t => {
     {
       selector: 'div',
       sameLevel: true,
+      name: 'section-container',
       includes: [
         {
           name: 'section',
@@ -556,12 +560,14 @@ test.only('markers', t => {
       name: 'section',
       properties: {
         heading: 'h2',
-        text: 'div'
+        text: 'div',
       },
     },
   ];
 
-  const result = objectsFromHtml(html, descriptors);
+  const result = objectsFromHtml(html, descriptors, {
+    topLevelItemTypes: ['section-container'],
+  });
 
   t.deepEqual(result, [
     {

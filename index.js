@@ -63,7 +63,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     contextElements.forEach(ctx => {
       itemDescriptors.forEach(itemDescriptor => {
         const {
-          selector,
+          selector = '.',
           sameLevel,
           sameParent,
           leavesOnly,
@@ -185,29 +185,40 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                 let i = 0;
                 while (i <= childElements.length) {
                   let $curr = childElements[i];
-                  if ($($curr).find(startMarker)) {
+                  if ($($curr).is(startMarker)) {
                     inside = true;
                     if (!emptyFragment || i === childElements.length - 1) {
-                      console.log('html', $($fragment).html());
                       const includedItems = process(
                         $fragment,
                         [childItemDescriptor],
                         depth + 1,
                       );
-                      console.log('incl items', includedItems);
                       item.children = [...item.children, ...includedItems];
-                    } else {
                       $fragment = $('<div id="scraping-fragment"></div>');
+                      $fragment.append($curr);
                       emptyFragment = true;
-                    }
-                  } else {
-                    if (inside) {
+                    } else {
                       $fragment.append($curr);
                       emptyFragment = false;
+                    }
+                  } else {
+                    $fragment.append($curr);
+                    emptyFragment = false;
+                    if (i === childElements.length - 1) {
+                      const includedItems = process(
+                        $fragment,
+                        [childItemDescriptor],
+                        depth + 1,
+                      );
+                      item.children = [...item.children, ...includedItems];
+                      $fragment = $('<div id="scraping-fragment"></div>');
+                      $fragment.append($curr);
+                      emptyFragment = true;
                     }
                   }
                   i++;
                 }
+                items.push(item);
                 return;
               }
 
