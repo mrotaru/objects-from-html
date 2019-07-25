@@ -3,18 +3,21 @@ const assert = require('assert');
 const deepMerge = require('lodash.merge');
 const util = require('util');
 
+const graphUtils = require('./graph');
+const extractProperties = require('./extract-properties');
+const { dbg } = require('./debug');
+
 const defaultOptions = {
   generateId: false,
   includeItemType: false,
   topLevelItemTypes: null,
-  debug: true,
+  debug: false,
   root: 'body',
 };
 
-const sanitizeString = str => str.trim().replace(/\s+/gm, ' ');
-
 function objectsFromHtml(html, itemDescriptors, options = {}) {
-  const finalOptions = deepMerge(defaultOptions, options);
+  const finalOptions = deepMerge({}, defaultOptions, options);
+  const debug = finalOptions.debug;
 
   const itemDescriptorsArray = Array.isArray(itemDescriptors)
     ? itemDescriptors
@@ -25,24 +28,6 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
     xmlMode: false,
     decodeEntities: true,
   });
-
-  const dbgDesc = $el => {
-    let attribs = '';
-    if ($el.attribs.class) attribs = `.${$el.attribs.class}`;
-    if ($el.attribs.id) attribs = `#${$el.attribs.id}`;
-    return attribs ? `${$el.name} (${attribs})` : $el.name;
-  };
-
-  function dbg(_info = '', $_el, depth = 0) {
-    const $el = typeof _info !== 'string' ? _info : $_el;
-    const info = typeof _info !== 'string' ? $_el : _info;
-    let retVal = $($el)
-      .parents()
-      .toArray()
-      .reduce((acc, $curr) => `${dbgDesc($curr)} > ${acc}`, dbgDesc($el));
-    retVal = (info && `${info}: ${retVal}`) || retVal;
-    finalOptions.debug && console.log(' '.repeat(depth * 4), retVal);
-  }
 
   let topLevelItemTypes = itemDescriptorsArray;
   if (finalOptions.topLevelItemTypes) {
@@ -69,7 +54,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           leavesOnly,
           name,
         } = itemDescriptor;
-        dbg(`🔍 ${selector} in`, ctx, depth);
+        debug && dbg(`🔍 ${selector} in`, ctx, depth);
         let all = [ctx];
         if (selector && selector !== '.') {
           all = $(selector, ctx).toArray();
@@ -77,39 +62,21 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
 
         // Build an array of elements matching the item descriptor. Take into
         // account the `leavesOnly`, `sameParent` and `sameLevel` options.
-        const $parent = $(all[0]).parent();
-        const distanceFromContext = $(all[0]).parentsUntil(ctx).length;
-        let matches;
+        let matches = [...all];
         if (leavesOnly) {
-          matches = [...all];
-          all.forEach($match => {
-            const parents = $($match)
-              .parents()
-              .toArray();
-            parents.forEach($parent => {
-              if (all.find($el => $el === $parent)) {
-                matches = matches.filter($leaf => $leaf !== $parent);
-              }
-            });
-          });
+          matches = graphUtils.leavesOnly($, all);
         } else {
-          matches = all.filter($element => {
-            if (sameParent) {
-              return $($element.parent).is($($parent));
-            } else if (sameLevel) {
-              return (
-                $($element).parentsUntil(ctx).length === distanceFromContext
-              );
-            } else {
-              return true;
-            }
-          });
+          if (sameParent) {
+            matches = graphUtils.sameParent($, matches);
+          } else if (sameLevel) {
+            matches = graphUtils.sameLevel($, ctx, matches);
+          }
         }
 
         // For every matching element, extract properties and look for included
         // (nested) items.
         matches.forEach($element => {
-          dbg('    🌟', $element, depth);
+          debug && dbg('    🌟', $element, depth);
           let item = {};
           if (finalOptions.includeItemType) {
             item.itemType = name;
@@ -117,37 +84,13 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
 
           // Extract properties, as described by the item descriptors `properties`
           // property for the current item type.
-          const propertyKeys =
-            (itemDescriptor.properties &&
-              Object.keys(itemDescriptor.properties)) ||
-            [];
-          for (let propertyKey of propertyKeys) {
-            const propertyDescriptor = itemDescriptor.properties[propertyKey];
-            if (typeof propertyDescriptor === 'string') {
-              // just a CSS selector
-              let $propertyElement =
-                propertyDescriptor === '.'
-                  ? $($element, ctx)
-                  : $($element, ctx).find(propertyDescriptor);
-              item[propertyKey] = sanitizeString($propertyElement.text());
-            } else if (typeof propertyDescriptor === 'object') {
-              // CSS selector and an 'extract' property
-              assert(propertyDescriptor.extract, 'must have extract');
-              const { extract } = propertyDescriptor;
-              const selector = propertyDescriptor.selector || '.';
-              let $propertyElement =
-                selector === '.'
-                  ? $($element, ctx)
-                  : $($element, ctx).find(selector);
-              if (extract === 'text') {
-                item[propertyKey] = sanitizeString($propertyElement.text());
-              } else if (extract === 'href') {
-                item[propertyKey] = $propertyElement.attr('href');
-              } else if (extract === 'html') {
-                item[propertyKey] = $propertyElement.parent().html();
-              }
-            }
-          }
+          const properties = extractProperties(
+            $,
+            ctx,
+            $element,
+            itemDescriptor.properties,
+          );
+          item = { ...item, ...properties };
 
           // Based on the objects inside the `includes` property, search for
           // included items, which will form the `children` property of the
@@ -277,11 +220,12 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                   return $elementParent === $firstChildParent;
                 });
               } else {
-                dbg(
-                  `containers not found (${included.selector})`,
-                  $element,
-                  depth,
-                );
+                debug &&
+                  dbg(
+                    `containers not found (${included.selector})`,
+                    $element,
+                    depth,
+                  );
               }
 
               // Search each element (that wasn't filtered out above) for

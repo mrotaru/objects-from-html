@@ -15,7 +15,6 @@ test('smoke test', t => {
     </div>
 </div>`;
   const descriptor = {
-    name: 'book',
     selector: '.book',
     properties: {
       title: '.title',
@@ -531,7 +530,7 @@ test('includes', t => {
 });
 
 // markers are not implemented yet
-test.only('markers', t => {
+test('markers', t => {
   const html = `
   <div id="container">
     <h2>Foo</h2>
