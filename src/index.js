@@ -11,6 +11,8 @@ const defaultOptions = {
   generateId: false,
   includeItemType: false,
   topLevelItemTypes: null,
+  storeValuesInArrays: false,
+  sanitizeText: true,
   debug: false,
   root: 'body',
 };
@@ -89,6 +91,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             ctx,
             $element,
             itemDescriptor.properties,
+            { ...finalOptions, ...itemDescriptor }, // FIXME - only merge options
           );
           item = { ...item, ...properties };
 

@@ -19,4 +19,4 @@ function dbg(_info = '', $_el, depth = 0) {
 module.exports = {
   dbg,
   dbgDesc,
-}
+};

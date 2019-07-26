@@ -529,7 +529,54 @@ test('includes', t => {
   t.end();
 });
 
-// markers are not implemented yet
+test('storeValuesInArrays', t => {
+  const html = `
+<div>
+  <p>p1</p>
+  <p>p2</p>
+</div>
+`;
+  const descriptors = [
+    {
+      selector: 'div',
+      storeValuesInArrays: true,
+      properties: { text: 'p' },
+    },
+  ];
+  const result = objectsFromHtml(html, descriptors);
+  t.deepEqual(result, [{ text: ['p1', 'p2'] }]);
+  t.end();
+});
+
+test('storeValuesInArrays - inherited', t => {
+  const html = `
+<div id='1'>
+  <p>p1</p>
+  <p>p2</p>
+</div>
+<div id='2'>
+  <p>p3</p>
+  <p>p4</p>
+</div>
+`;
+  const descriptors = [
+    {
+      selector: '#1',
+      storeValuesInArrays: false,
+      properties: { text: 'p' },
+    },
+    {
+      selector: '#2',
+      properties: { text: 'p' },
+    },
+  ];
+  const result = objectsFromHtml(html, descriptors, {
+    storeValuesInArrays: true,
+  });
+  t.deepEqual(result, [{ text: 'p1p2' }, { text: ['p3', 'p4'] }]);
+  t.end();
+});
+
 test('markers', t => {
   const html = `
   <div id="container">
