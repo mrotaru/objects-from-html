@@ -338,28 +338,20 @@ test('includes - sameLevel', t => {
 `;
   const descriptors = [
     {
-      name: 'top-level',
       selector: '.foo',
       includes: [
         {
-          name: 'p-item',
-          selector: '.',
+          selector: 'p',
+          sameLevel: true,
+          properties: {
+            text: '.',
+          },
         },
       ],
     },
-    {
-      name: 'p-item',
-      selector: 'p',
-      sameLevel: true,
-      properties: {
-        text: '.',
-      },
-    },
   ];
 
-  const result = objectsFromHtml(html, descriptors, {
-    topLevelItemTypes: ['top-level'],
-  });
+  const result = objectsFromHtml(html, descriptors);
   t.deepEqual(result, [
     {
       children: [
@@ -372,51 +364,56 @@ test('includes - sameLevel', t => {
   t.end();
 });
 
-test('includes - simple - with references', t => {
+test('includes - three levels deep', t => {
   const html = `
   <div class='foo'>
     <h2>Foo</h2>
     <div class='bar'>
-      <h3>Bar 1</h3>
+      <h3>Bar</h3>
+      <div class='baz'>
+        <h4>Baz</h4>
+      </div>  
     </div> 
   </div>
 `;
   const descriptors = [
     {
-      name: 'foo',
       selector: '.foo',
       properties: {
         heading: 'h2',
       },
       includes: [
         {
-          name: 'bar',
-          selector: '.',
+          selector: '.bar',
+          properties: {
+            heading: 'h3',
+          },
+          includes: [
+            {
+              selector: '.baz',
+              properties: {
+                heading: 'h4',
+              },
+            },
+          ],
         },
       ],
     },
-    {
-      name: 'bar',
-      selector: '.bar',
-      properties: {
-        heading: 'h3',
-      },
-    },
   ];
 
-  const result = objectsFromHtml(html, descriptors, {
-    includeItemType: true,
-    topLevelItemTypes: ['foo'],
-  });
+  const result = objectsFromHtml(html, descriptors);
 
   t.deepEqual(result, [
     {
-      itemType: 'foo',
       heading: 'Foo',
       children: [
         {
-          itemType: 'bar',
-          heading: 'Bar 1',
+          heading: 'Bar',
+          children: [
+            {
+              heading: 'Baz',
+            },
+          ],
         },
       ],
     },
@@ -447,59 +444,39 @@ test('includes', t => {
 
   const descriptors = [
     {
-      name: 'top-level',
       selector: 'ul',
       sameLevel: true,
       includes: [
         {
-          name: 'link-list',
           sameLevel: true,
-          selector: 'li',
+          selector: 'li > ul',
+          includes: [
+            {
+              selector: 'li > a',
+              properties: {
+                href: {
+                  extract: 'href',
+                },
+                text: '.',
+              },
+            },
+          ],
         },
       ],
-    },
-    {
-      name: 'link-list',
-      selector: 'ul',
-      sameLevel: true,
-      includes: [
-        {
-          name: 'link',
-          selector: 'li',
-        },
-      ],
-    },
-    {
-      name: 'link',
-      selector: '> a',
-      properties: {
-        href: {
-          selector: '.',
-          extract: 'href',
-        },
-        text: '.',
-      },
     },
   ];
-  const result = objectsFromHtml(html, descriptors, {
-    includeItemType: true,
-    topLevelItemTypes: ['top-level'],
-  });
+  const result = objectsFromHtml(html, descriptors);
 
   const expected = [
     {
-      itemType: 'top-level',
       children: [
         {
-          itemType: 'link-list',
           children: [
             {
-              itemType: 'link',
               href: 'http://1.1.1',
               text: '1.1.1',
             },
             {
-              itemType: 'link',
               href: 'http://1.1.2',
               text: '1.1.2',
             },
@@ -509,12 +486,10 @@ test('includes', t => {
           itemType: 'link-list',
           children: [
             {
-              itemType: 'link',
               href: 'http://1.2.1',
               text: '1.2.1',
             },
             {
-              itemType: 'link',
               href: 'http://1.2.2',
               text: '1.2.2',
             },
@@ -594,20 +569,65 @@ test('markers', t => {
     {
       selector: 'div',
       sameLevel: true,
-      name: 'section-container',
       includes: [
         {
-          name: 'section',
           startMarker: 'h2',
+          properties: {
+            heading: 'h2',
+            text: 'div',
+          },
         },
       ],
     },
+  ];
+
+  const result = objectsFromHtml(html, descriptors);
+
+  t.deepEqual(result, [
     {
-      name: 'section',
-      properties: {
-        heading: 'h2',
-        text: 'div',
-      },
+      children: [
+        {
+          heading: 'Foo',
+          text: 'Foo text',
+        },
+        {
+          heading: 'Bar',
+          text: 'Bar text',
+        },
+      ],
+    },
+  ]);
+  t.end();
+});
+
+test('markers - nested', t => {
+  const html = `
+  <div id="container">
+    <h2>Foo</h2>
+    <p>Foo text</p>
+    <h2>Bar</h2>
+    <p>Bar text</p>
+    <h3>Nested 1</h3>
+    <p>n1</p>
+    <p>n2</p>
+    <h3>Nested 2</h3>
+    <p>n3</p>
+    <p>n4</p>
+  </div>
+`;
+  const descriptors = [
+    {
+      selector: 'div',
+      sameLevel: true,
+      includes: [
+        {
+          startMarker: 'h2',
+          properties: {
+            heading: 'h2',
+            text: 'div',
+          },
+        },
+      ],
     },
   ];
 
@@ -625,6 +645,16 @@ test('markers', t => {
         {
           heading: 'Bar',
           text: 'Bar text',
+          children: [
+            {
+              heading: 'Nested 1',
+              text: ['n1', 'n2'],
+            },
+            {
+              heading: 'Nested 2',
+              text: ['n3', 'n4'],
+            },
+          ],
         },
       ],
     },
