@@ -27,7 +27,7 @@ const extractProperties = ($, ctx, $element, properties, options) => {
       text: $el =>
         options.sanitizeText ? sanitizeString($el.text()) : $el.text(),
       href: $el => $el.attr('href'),
-      html: $el => $el.parent().html(), // FIXME
+      html: $el => $el.html(),
     };
     if (options.storeValuesInArrays) {
       $propertyElements.toArray().forEach($el => {
