@@ -19,7 +19,11 @@ const defaultOptions = {
 
 function objectsFromHtml(html, itemDescriptors, options = {}) {
   const finalOptions = deepMerge({}, defaultOptions, options);
-  const debug = finalOptions.debug;
+  const debug = (...args) => {
+    if (finalOptions.debug) {
+      dbg($, ...args);
+    }
+  };
 
   const itemDescriptorsArray = Array.isArray(itemDescriptors)
     ? itemDescriptors
@@ -56,7 +60,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           leavesOnly,
           name,
         } = itemDescriptor;
-        debug && dbg(`🔍 ${selector} in`, ctx, depth);
+        debug(`🔍 ${selector} in`, ctx, depth);
         let all = [ctx];
         if (selector && selector !== '.') {
           all = $(selector, ctx).toArray();
@@ -78,7 +82,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
         // For every matching element, extract properties and look for included
         // (nested) items.
         matches.forEach($element => {
-          debug && dbg('    🌟', $element, depth);
+          debug('    🌟', $element, depth);
           let item = {};
           if (finalOptions.includeItemType) {
             item.itemType = name;
@@ -223,12 +227,11 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                   return $elementParent === $firstChildParent;
                 });
               } else {
-                debug &&
-                  dbg(
-                    `containers not found (${included.selector})`,
-                    $element,
-                    depth,
-                  );
+                debug(
+                  `containers not found (${included.selector})`,
+                  $element,
+                  depth,
+                );
               }
 
               // Search each element (that wasn't filtered out above) for

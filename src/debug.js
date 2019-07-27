@@ -5,7 +5,7 @@ const dbgDesc = $el => {
   return attribs ? `${$el.name} (${attribs})` : $el.name;
 };
 
-function dbg(_info = '', $_el, depth = 0) {
+function dbg($, _info = '', $_el, depth = 0) {
   const $el = typeof _info !== 'string' ? _info : $_el;
   const info = typeof _info !== 'string' ? $_el : _info;
   let retVal = $($el)
