@@ -453,6 +453,7 @@ test('includes', t => {
           includes: [
             {
               selector: 'li > a',
+              sameLevel: true,
               properties: {
                 href: {
                   extract: 'href',
@@ -483,7 +484,6 @@ test('includes', t => {
           ],
         },
         {
-          itemType: 'link-list',
           children: [
             {
               href: 'http://1.2.1',
@@ -552,7 +552,7 @@ test('storeValuesInArrays - inherited', t => {
   t.end();
 });
 
-test('markers', t => {
+test.skip('markers', t => {
   const html = `
   <div id="container">
     <h2>Foo</h2>
@@ -600,7 +600,7 @@ test('markers', t => {
   t.end();
 });
 
-test('markers - nested', t => {
+test.skip('markers - nested', t => {
   const html = `
   <div id="container">
     <h2>Foo</h2>

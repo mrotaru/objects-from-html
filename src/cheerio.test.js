@@ -82,3 +82,22 @@ test('select leaves', t => {
   t.equals(leaves[2].attribs.id, '3');
   t.end();
 });
+
+test('remove nodes', t => {
+  const html = `
+  <div>
+    <p class='a'></p>
+    <p class='rm'></p>
+    <p class='rm'></p>
+    <p class='c'></p>
+  </div>
+`;
+  const $ = cheerio.load(html, htmlParserOptions);
+  const all = $('div p');
+  const rm = $('.rm');
+  // const remaining = rm.remove();
+  // console.log(all.length, ' - ', rm.length, ' = ', remaining.length);
+  console.log($(all).html());
+  // console.log($(remaining).html());
+  t.end();
+});

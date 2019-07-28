@@ -88,8 +88,6 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             item.itemType = name;
           }
 
-          // Extract properties, as described by the item descriptors `properties`
-          // property for the current item type.
           const properties = extractProperties(
             $,
             ctx,
@@ -107,15 +105,10 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
               item.children = [];
             }
             for (let childItemDescriptor of itemDescriptor.includes) {
-              let children = [];
-              if (firstIncludedContainer) {
-                children = process(
-                  $element,
-                  [childItemDescriptor],
-                  depth + 1,
-                );
-              }
-              item.children = [...item.children, ...children];
+              item.children = [
+                ...item.children,
+                ...process($($element), [childItemDescriptor], depth + 1),
+              ];
             }
           }
 
