@@ -1,7 +1,7 @@
-const cheerio = require('cheerio');
-const assert = require('assert');
 const deepMerge = require('lodash.merge');
-const util = require('util');
+const assert = require('assert');
+const { parse, select } = require('./html');
+const { toArray } = require('./utils');
 
 const graphUtils = require('./graph');
 const extractProperties = require('./extract-properties');
@@ -10,11 +10,9 @@ const { dbg } = require('./debug');
 const defaultOptions = {
   generateId: false,
   includeItemType: false,
-  topLevelItemTypes: null,
   storeValuesInArrays: false,
   sanitizeText: true,
   debug: false,
-  root: 'body',
 };
 
 function objectsFromHtml(html, itemDescriptors, options = {}) {
@@ -24,34 +22,13 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
       dbg($, ...args);
     }
   };
+  assert(typeof html === 'string', 'Input HTML must be a string');
+  const $ = parse(html);
+  return findMatches([$], toArray(itemDescriptors), (depth = 0));
 
-  const itemDescriptorsArray = Array.isArray(itemDescriptors)
-    ? itemDescriptors
-    : [itemDescriptors];
-
-  const $ = cheerio.load(html, {
-    normalizeWhitespace: true,
-    xmlMode: false,
-    decodeEntities: true,
-  });
-
-  let topLevelItemTypes = itemDescriptorsArray;
-  if (finalOptions.topLevelItemTypes) {
-    topLevelItemTypes = finalOptions.topLevelItemTypes.map(topLevelItemName =>
-      itemDescriptorsArray.find(desc => desc.name === topLevelItemName),
-    );
-  }
-
-  const $root = (finalOptions.root && $(finalOptions.root)) || $();
-  const result = process($root, topLevelItemTypes, (depth = 0));
-  return result;
-
-  function process(context, itemDescriptors, depth) {
+  function findMatches(haystacks, itemDescriptors, depth) {
     const items = [];
-    const contextElements = Array.isArray(context)
-      ? context
-      : context.toArray();
-    contextElements.forEach(ctx => {
+    haystacks.forEach(haystack => {
       itemDescriptors.forEach(itemDescriptor => {
         const {
           selector = '.',
@@ -60,22 +37,22 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           leavesOnly,
           name,
         } = itemDescriptor;
-        debug(`🔍 ${selector} in`, ctx, depth);
-        let all = [ctx];
+        debug(`🔍 ${selector} in`, haystack, depth);
+        let all = [haystack];
         if (selector && selector !== '.') {
-          all = $(selector, ctx).toArray();
+          all = select(selector, haystack);
         }
 
         // Build an array of elements matching the item descriptor. Take into
         // account the `leavesOnly`, `sameParent` and `sameLevel` options.
         let matches = [...all];
         if (leavesOnly) {
-          matches = graphUtils.leavesOnly($, all);
+          matches = graphUtils.leavesOnly(all);
         } else {
           if (sameParent) {
-            matches = graphUtils.sameParent($, matches);
+            matches = graphUtils.sameParent(matches);
           } else if (sameLevel) {
-            matches = graphUtils.sameLevel($, ctx, matches);
+            matches = graphUtils.sameLevel(matches, haystack);
           }
         }
 
@@ -89,8 +66,6 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           }
 
           const properties = extractProperties(
-            $,
-            ctx,
             $element,
             itemDescriptor.properties,
             { ...finalOptions, ...itemDescriptor }, // FIXME - only merge options
@@ -107,7 +82,7 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
             for (let childItemDescriptor of itemDescriptor.includes) {
               item.children = [
                 ...item.children,
-                ...process($($element), [childItemDescriptor], depth + 1),
+                ...findMatches([$element], [childItemDescriptor], depth + 1),
               ];
             }
           }

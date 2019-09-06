@@ -1,27 +1,28 @@
-const leavesOnly = ($, elements) => {
-  let leafs = [...elements];
-  elements.forEach($match => {
-    const parents = $($match)
-      .parents()
-      .toArray();
+const { getParents } = require('./html');
+
+const leavesOnly = elements => {
+  let leaves = [...elements];
+  elements.forEach($element => {
+    const parents = getParents($element);
     parents.forEach($parent => {
       if (elements.find($el => $el === $parent)) {
-        leafs = leafs.filter($leaf => $leaf !== $parent);
+        leaves = leaves.filter($leaf => $leaf !== $parent);
       }
     });
   });
-  return leafs;
+  return leaves;
 };
 
-const sameParent = ($, elements) => {
-  const $parent = $(elements[0]).parent();
-  return elements.filter($element => $($element.parent).is($($parent)));
+const sameParent = elements => {
+  const $firstParent = elements[0].parent;
+  return elements.filter($element => $element.parent === $firstParent);
 };
 
-const sameLevel = ($, ctx, elements) => {
-  const distanceFromContext = $(elements[0]).parentsUntil(ctx).length;
+const sameLevel = (elements, levelNode) => {
+  const parents = getParents(elements[0], levelNode);
+  const distanceFromContext = parents.length;
   return elements.filter(
-    $element => $($element).parentsUntil(ctx).length === distanceFromContext,
+    $element => getParents($element, levelNode).length === distanceFromContext,
   );
 };
 

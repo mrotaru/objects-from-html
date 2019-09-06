@@ -1,8 +1,9 @@
 const assert = require('assert');
-
+const { select, getText, getHtml } = require('./html');
 const { sanitizeString } = require('./sanitizers');
+const { firstOrSelf, toArray } = require('./utils');
 
-const extractProperties = ($, ctx, $element, properties, options) => {
+const extractProperties = ($element, properties, options = {}) => {
   const result = {};
   const propertyKeys = (properties && Object.keys(properties)) || [];
   for (let propertyKey of propertyKeys) {
@@ -15,8 +16,8 @@ const extractProperties = ($, ctx, $element, properties, options) => {
         : propertyDescriptor.selector;
     const $propertyElements =
       selector && selector !== '.'
-        ? $($element, ctx).find(selector)
-        : $($element, ctx);
+        ? select(selector, $element)
+        : $element;
 
     // extract property value(s)
     const propertyType =
@@ -24,14 +25,18 @@ const extractProperties = ($, ctx, $element, properties, options) => {
         ? 'text'
         : propertyDescriptor.extract;
     const extractors = {
-      text: $el =>
-        options.sanitizeText ? sanitizeString($el.text()) : $el.text(),
-      href: $el => $el.attr('href'),
-      html: $el => $el.html(),
+      text: elements => {
+        const text = getText(toArray(elements));
+        return options.sanitizeText
+          ? sanitizeString(text)
+          : text
+      },
+      href: elements => { return firstOrSelf(elements).attribs.href },
+      html: elements => getHtml(firstOrSelf(elements)),
     };
     if (options.storeValuesInArrays) {
-      $propertyElements.toArray().forEach($el => {
-        const value = extractors[propertyType]($($el));
+      $propertyElements.forEach($el => {
+        const value = extractors[propertyType]($el);
         if (result.hasOwnProperty(propertyKey)) {
           result[propertyKey] = [...result[propertyKey], value];
         } else {
