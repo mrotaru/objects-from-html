@@ -47,6 +47,6 @@ const getText = nodes =>
     return acc;
   }, '');
 
-const getHtml = node => parse5.serialize(node, parseOptions)
+const getHtml = node => parse5.serialize(node.parent, parseOptions)
 
 module.exports = { select, selectOne, parse, getParents, getHtml, getText };

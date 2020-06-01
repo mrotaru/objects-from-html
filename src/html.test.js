@@ -1,5 +1,5 @@
 const test = require('tape');
-const { select, parse, getParents, selectOne } = require('./html');
+const { select, parse, getParents, selectOne, getHtml } = require('./html');
 
 const htmlDoc = `
 <!DOCTYPE html>
@@ -15,14 +15,19 @@ const htmlFragment = `
 
 test('basic selectors', t => {
   const doc = parse(htmlDoc);
-  const frag = parse(htmlFragment);
+  const fragment = parse(htmlFragment);
 
   // can't select body ?
   // t.equals(select('body', doc).length, 1);
 
   // tag
   t.equals(select('div', doc).length, 1);
-  t.equals(select('div', frag).length, 1);
+  t.equals(select('h1', doc).length, 1);
+  t.equals(select('#foo', doc).length, 1);
+
+  t.equals(select('div', fragment).length, 1);
+  t.equals(select('h1', fragment).length, 1);
+  t.equals(select('#foo', fragment).length, 1);
 
   t.end();
 });
@@ -54,3 +59,16 @@ test('getParents - until', t => {
   t.equals(parents[0].attribs.id, '2');
   t.end();
 }) 
+
+test('getHtml', t => {
+  const frag = parse(`
+  <div id="1">
+    <div id="2">
+      <h1>Foo</h1>
+    </div>
+  </div>
+  `);
+  const div2 = selectOne('#2', frag);
+  t.ok(getHtml(div2).trim().startsWith("<div id=\"2\">"));
+  t.end();
+})
