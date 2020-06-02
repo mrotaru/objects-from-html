@@ -114,7 +114,7 @@ test('extract html', t => {
   const result = objectsFromHtml(html, descriptor);
   t.deepEqual(result, [
     {
-      allText: 'Some <strong>nice</strong> text',
+      allText: '<p>Some <strong>nice</strong> text</p>',
     },
   ]);
 

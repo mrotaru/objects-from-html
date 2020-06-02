@@ -11,7 +11,7 @@ test('extractProperties', t => {
     </div>
 </div>`;
   const parsed = parse(html);
-  const element = selectOne('.books', parsed);
+  const element = selectOne('.book', parsed);
   const book = extractProperties(element, {
     title: '.title',
     rating: '.rating',
@@ -21,11 +21,14 @@ test('extractProperties', t => {
     },
     html: {
       extract: 'html',
-    }
-  })
+    },
+    ratingXPath: {
+      xpath: 'ancestor::*[position()=1]',
+    },
+  });
   t.equals(book.title, 'Foo');
   t.equals(book.rating, '4/5');
   t.equals(book.link, 'http://book-1.com');
-  t.true(book.html.startsWith('\n    <div class="book"'))
+  t.true(book.html.startsWith('\n    <div class="book"'));
   t.end();
 });
