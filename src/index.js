@@ -72,6 +72,9 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
           );
           item = { ...item, ...properties };
 
+          let hasAllRequiredProperties = true;
+          let missingProperty;
+
           // Based on the objects inside the `includes` property, search for
           // included items, which will form the `children` property of the
           // current item.
@@ -85,15 +88,30 @@ function objectsFromHtml(html, itemDescriptors, options = {}) {
                 ...findMatches([$element], [childItemDescriptor], depth + 1),
               ];
             }
+          } else {
+            // only include item in results if all required properties are non-empty
+            for(let propKey of Object.keys(itemDescriptor.properties)) {
+              const prop = itemDescriptor.properties[propKey];
+              if (typeof prop === 'object' && prop.required) {
+                if (!item.hasOwnProperty(propKey) || item[propKey] === '') {
+                  hasAllRequiredProperties = false;
+                  missingProperty = propKey;
+                  break;
+                }
+              }
+            }
           }
 
-          finalOptions.debug &&
-            console.log(' '.repeat(depth * 4), '    🎁', {
-              itemType: item.itemType,
-              text: item.text,
-              children: (item.children && item.children.length) || null,
-            });
-          items.push(item);
+          if (hasAllRequiredProperties) {
+            finalOptions.debug &&
+              console.log(' '.repeat(depth * 4), '    🎁', {
+                itemType: item.itemType,
+                text: item.text,
+                children: (item.children && item.children.length) || null,
+              });
+            items.push(item);
+          } else {
+          }
         });
       });
     });

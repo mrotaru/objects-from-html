@@ -661,3 +661,43 @@ test.skip('markers - nested', t => {
   ]);
   t.end();
 });
+
+test('required properties - if any is missing, item is not included in results', t => {
+  const html = `<div class='books'>
+    <div class='book'>
+        <h3 class='title'>Foo</h3>
+        <div class='rating'>4/5</div>
+    </div>
+    <div class='book'>
+        <h3 class='title'>Bar</h3>
+    </div>
+    <div class='book'>
+        <div class='rating'>4/5</div>
+    </div>
+</div>`;
+  const descriptor = {
+    selector: '.book',
+    properties: {
+      title: {
+        selector: '.title',
+        required: true,
+      },
+      rating: '.rating',
+    },
+  };
+
+  const result = objectsFromHtml(html, descriptor);
+
+  t.deepEqual(result, [
+    {
+      title: 'Foo',
+      rating: '4/5',
+    },
+    {
+      title: 'Bar',
+      rating: '',
+    },
+  ]);
+
+  t.end();
+});
